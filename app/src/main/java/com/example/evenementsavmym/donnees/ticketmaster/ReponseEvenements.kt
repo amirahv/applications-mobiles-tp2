@@ -20,5 +20,50 @@ data class EvenementApi(
     val id: String,
 
     @SerialName("name")
-    val nom: String
+    val nom: String,
+
+    val dates: DatesApi? = null,
+
+    val images: List<ImageApi> = emptyList(),
+
+    @SerialName("_embedded")
+    val contenu: ContenuLieuxApi? = null
+)
+
+@Serializable
+data class DatesApi(
+    @SerialName("start")
+    val debut: DebutApi? = null
+)
+
+@Serializable
+data class DebutApi(
+    @SerialName("localDate")
+    val dateLocale: String? = null
+)
+
+@Serializable
+data class ImageApi(
+    val url: String? = null
+)
+
+@Serializable
+data class ContenuLieuxApi(
+    @SerialName("venues")
+    val lieux: List<LieuApi> = emptyList()
+)
+
+@Serializable
+data class LieuApi(
+    @SerialName("name")
+    val nom: String? = null,
+
+    @SerialName("city")
+    val ville: VilleApi? = null
+)
+
+@Serializable
+data class VilleApi(
+    @SerialName("name")
+    val nom: String? = null
 )
