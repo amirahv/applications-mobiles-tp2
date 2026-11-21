@@ -95,6 +95,14 @@ fun ListeEvenements(
                         )
 
                         Text(
+                            // take(5) transforme "19:00:00" en "19:00"
+                            text = evenement.heureLocale?.take(5)
+                                ?: stringResource(R.string.heure_a_confirmer),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+
+                        Text(
                             text = evenement.salle
                                 ?: stringResource(R.string.salle_a_confirmer),
                             style = MaterialTheme.typography.bodyMedium
@@ -112,8 +120,6 @@ fun ListeEvenements(
         }
     }
 }
-
-// Conserve ici ta fonction ApercuListeEvenements() existante.
 
 @Preview(showBackground = true)
 @Composable

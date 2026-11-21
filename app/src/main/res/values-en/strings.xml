@@ -9,4 +9,5 @@
     <string name="date_a_confirmer">Date to be confirmed</string>
     <string name="salle_a_confirmer">Venue to be confirmed</string>
     <string name="ville_a_confirmer">City to be confirmed</string>
+    <string name="heure_a_confirmer">Time to be confirmed</string>
 </resources>

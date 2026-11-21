@@ -8,4 +8,5 @@
     <string name="date_a_confirmer">Date à confirmer</string>
     <string name="salle_a_confirmer">Salle à confirmer</string>
     <string name="ville_a_confirmer">Ville à confirmer</string>
+    <string name="heure_a_confirmer">Heure à confirmer</string>
 </resources>

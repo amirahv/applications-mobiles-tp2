@@ -33,13 +33,19 @@ data class EvenementApi(
 @Serializable
 data class DatesApi(
     @SerialName("start")
-    val debut: DebutApi? = null
+    val debut: DebutApi? = null,
+
+    @SerialName("status")
+    val statut: StatutApi? = null
 )
 
 @Serializable
 data class DebutApi(
     @SerialName("localDate")
-    val dateLocale: String? = null
+    val dateLocale: String? = null,
+
+    @SerialName("localTime")
+    val heureLocale: String? = null
 )
 
 @Serializable
@@ -66,4 +72,9 @@ data class LieuApi(
 data class VilleApi(
     @SerialName("name")
     val nom: String? = null
+)
+
+@Serializable
+data class StatutApi(
+    val code: String? = null
 )

@@ -41,7 +41,9 @@ class EvenementsViewModel : ViewModel() {
                             dateLocale = evenementApi.dates?.debut?.dateLocale,
                             salle = lieu?.nom,
                             ville = lieu?.ville?.nom,
-                            imageUrl = evenementApi.images.firstOrNull()?.url
+                            imageUrl = evenementApi.images.firstOrNull()?.url,
+                            heureLocale = evenementApi.dates?.debut?.heureLocale,
+                            statut = evenementApi.dates?.statut?.code
                         )
                     }
 
