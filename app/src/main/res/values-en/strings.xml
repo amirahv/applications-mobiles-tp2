@@ -1,2 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources></resources>
+<resources>
+    <string name="app_name">EvenementsAVMYM</string>
+    <string name="rafraichir_evenements">Refresh</string>
+    <string name="erreur_chargement_evenements">Unable to load events. Please try again.</string>
+    <string name="aucun_evenement">No events to display.</string>
+</resources>
