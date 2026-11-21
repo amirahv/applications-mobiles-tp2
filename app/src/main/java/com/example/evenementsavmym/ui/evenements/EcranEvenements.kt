@@ -44,6 +44,7 @@ fun EcranEvenements(
         }
 
         if (chargement) {
+            // pour afficher un cercle animé pour indiquer que le chargement est en cours.
             CircularProgressIndicator()
         }
 
