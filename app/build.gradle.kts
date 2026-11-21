@@ -1,7 +1,25 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     id("org.jetbrains.kotlin.plugin.serialization") version "2.4.21"
+}
+
+// Lit la configuration locale du projet.
+val proprietesLocales = Properties().apply {
+    rootProject.file("local.properties").inputStream().use {
+        load(it)
+    }
+}
+
+// Récupère la clé sans l'écrire dans le code partagé.
+val cleTicketmaster = proprietesLocales
+    .getProperty("TICKETMASTER_API_KEY", "")
+    .trim()
+
+require(cleTicketmaster.isNotBlank()) {
+    "Ajoute TICKETMASTER_API_KEY dans local.properties."
 }
 
 android {
@@ -18,6 +36,13 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // Cette instruction demande à Gradle de créer une constante nommée TICKETMASTER_API_KEY
+        buildConfigField(
+            "String",
+            "TICKETMASTER_API_KEY",
+            "\"$cleTicketmaster\""
+        )
     }
 
     buildTypes {
@@ -34,6 +59,8 @@ android {
     }
     buildFeatures {
         compose = true
+        //active la génération de la classe BuildConfig
+        buildConfig = true
     }
 }
 
