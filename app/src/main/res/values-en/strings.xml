@@ -4,4 +4,9 @@
     <string name="rafraichir_evenements">Refresh</string>
     <string name="erreur_chargement_evenements">Unable to load events. Please try again.</string>
     <string name="aucun_evenement">No events to display.</string>
+    <string name="titre_evenements">Events</string>
+    <string name="chargement_evenements">Loading…</string>
+    <string name="date_a_confirmer">Date to be confirmed</string>
+    <string name="salle_a_confirmer">Venue to be confirmed</string>
+    <string name="ville_a_confirmer">City to be confirmed</string>
 </resources>

@@ -3,4 +3,9 @@
     <string name="rafraichir_evenements">Rafraîchir</string>
     <string name="erreur_chargement_evenements">Impossible de charger les évènements. Réessayez.</string>
     <string name="aucun_evenement">Aucun évènement à afficher.</string>
+    <string name="titre_evenements">Évènements</string>
+    <string name="chargement_evenements">Chargement…</string>
+    <string name="date_a_confirmer">Date à confirmer</string>
+    <string name="salle_a_confirmer">Salle à confirmer</string>
+    <string name="ville_a_confirmer">Ville à confirmer</string>
 </resources>

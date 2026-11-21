@@ -32,9 +32,16 @@ class EvenementsViewModel : ViewModel() {
                     .orEmpty()
                     // Convertit chaque EvenementApi en notre modèle Evenement
                     .map { evenementApi ->
+                        // Une salle peut être absente de la réponse.
+                        val lieu = evenementApi.contenu?.lieux?.firstOrNull()
+
                         Evenement(
                             id = evenementApi.id,
-                            nom = evenementApi.nom
+                            nom = evenementApi.nom,
+                            dateLocale = evenementApi.dates?.debut?.dateLocale,
+                            salle = lieu?.nom,
+                            ville = lieu?.ville?.nom,
+                            imageUrl = evenementApi.images.firstOrNull()?.url
                         )
                     }
 
