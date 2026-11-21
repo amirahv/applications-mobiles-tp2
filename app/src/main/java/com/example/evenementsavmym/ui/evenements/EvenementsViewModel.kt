@@ -35,6 +35,9 @@ class EvenementsViewModel : ViewModel() {
                         // Une salle peut être absente de la réponse.
                         val lieu = evenementApi.contenu?.lieux?.firstOrNull()
 
+                        // Récupère la première classification de l'évènement.
+                        val classification = evenementApi.classifications.firstOrNull()
+
                         Evenement(
                             id = evenementApi.id,
                             nom = evenementApi.nom,
@@ -43,7 +46,9 @@ class EvenementsViewModel : ViewModel() {
                             ville = lieu?.ville?.nom,
                             imageUrl = evenementApi.images.firstOrNull()?.url,
                             heureLocale = evenementApi.dates?.debut?.heureLocale,
-                            statut = evenementApi.dates?.statut?.code
+                            statut = evenementApi.dates?.statut?.code,
+                            categorie = classification?.segment?.nom,
+                            genre = classification?.genre?.nom
                         )
                     }
 

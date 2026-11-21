@@ -26,6 +26,8 @@ data class EvenementApi(
 
     val images: List<ImageApi> = emptyList(),
 
+    val classifications: List<ClassificationApi> = emptyList(),
+
     @SerialName("_embedded")
     val contenu: ContenuLieuxApi? = null
 )
@@ -49,8 +51,25 @@ data class DebutApi(
 )
 
 @Serializable
+data class StatutApi(
+    val code: String? = null
+)
+
+@Serializable
 data class ImageApi(
     val url: String? = null
+)
+
+@Serializable
+data class ClassificationApi(
+    val segment: NomClassificationApi? = null,
+    val genre: NomClassificationApi? = null
+)
+
+@Serializable
+data class NomClassificationApi(
+    @SerialName("name")
+    val nom: String? = null
 )
 
 @Serializable
@@ -72,9 +91,4 @@ data class LieuApi(
 data class VilleApi(
     @SerialName("name")
     val nom: String? = null
-)
-
-@Serializable
-data class StatutApi(
-    val code: String? = null
 )
