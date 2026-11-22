@@ -29,7 +29,22 @@ data class EvenementApi(
     val classifications: List<ClassificationApi> = emptyList(),
 
     @SerialName("_embedded")
-    val contenu: ContenuLieuxApi? = null
+    val contenu: ContenuLieuxApi? = null,
+
+    @SerialName("priceRanges")
+    val prix: List<PrixApi> = emptyList(),
+
+    @SerialName("sales")
+    val ventes: VentesApi? = null,
+
+    @SerialName("info")
+    val informations: String? = null,
+
+    @SerialName("pleaseNote")
+    val remarques: String? = null,
+
+    @SerialName("url")
+    val billetterieUrl: String? = null
 )
 
 @Serializable
@@ -109,4 +124,28 @@ data class AdresseApi(
 data class PaysApi(
     @SerialName("name")
     val nom: String? = null
+)
+
+@Serializable
+data class PrixApi(
+    @SerialName("min")
+    val minimum: Double? = null,
+
+    @SerialName("max")
+    val maximum: Double? = null,
+
+    @SerialName("currency")
+    val devise: String? = null
+)
+
+@Serializable
+data class VentesApi(
+    @SerialName("public")
+    val ventePublique: VentePubliqueApi? = null
+)
+
+@Serializable
+data class VentePubliqueApi(
+    @SerialName("startDateTime")
+    val dateDebutUtc: String? = null
 )

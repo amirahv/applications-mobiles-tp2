@@ -32,11 +32,20 @@ class EvenementsViewModel : ViewModel() {
                     .orEmpty()
                     // Convertit chaque EvenementApi en notre modèle Evenement
                     .map { evenementApi ->
-                        // Une salle peut être absente de la réponse.
                         val lieu = evenementApi.contenu?.lieux?.firstOrNull()
-
-                        // Récupère la première classification de l'évènement.
                         val classification = evenementApi.classifications.firstOrNull()
+                        val prix = evenementApi.prix.firstOrNull()
+                        // Regroupe les informations et les remarques disponibles.
+                        val informations = listOfNotNull(
+                            evenementApi.informations,
+                            evenementApi.remarques
+                        )
+                            .filter { it.isNotBlank() }
+                            // les sépare par une ligne vide
+                            .joinToString("\n\n")
+                            // retourne null si aucun texte ne reste
+                            .takeIf { it.isNotBlank() }
+
 
                         Evenement(
                             id = evenementApi.id,
@@ -50,7 +59,13 @@ class EvenementsViewModel : ViewModel() {
                             categorie = classification?.segment?.nom,
                             genre = classification?.genre?.nom,
                             adresse = lieu?.adresse?.ligne1,
-                            pays = lieu?.pays?.nom
+                            pays = lieu?.pays?.nom,
+                            prixMin = prix?.minimum,
+                            prixMax = prix?.maximum,
+                            devise = prix?.devise,
+                            dateDebutVenteUtc = evenementApi.ventes?.ventePublique?.dateDebutUtc,
+                            informations = informations,
+                            billetterieUrl = evenementApi.billetterieUrl
                         )
                     }
 
