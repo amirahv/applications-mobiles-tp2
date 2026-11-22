@@ -40,9 +40,9 @@ import androidx.compose.runtime.remember
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EcranEvenements(
+    modifier: Modifier = Modifier,
     onEvenementClique: (String) -> Unit,
     criteres: CriteresRecherche = CriteresRecherche(),
-    modifier: Modifier = Modifier,
     evenementsViewModel: EvenementsViewModel = viewModel()
 ) {
     val evenements by evenementsViewModel.evenements.collectAsState()
@@ -64,6 +64,7 @@ fun EcranEvenements(
     val texteAnnuler = stringResource(R.string.annuler)
 
     // Affiche une confirmation lorsqu'une nouvelle mise à jour réussit.
+    // LaunchedEffect démarre une coroutine
     LaunchedEffect(miseAJourAnnulable, evenementsViewModel) {
         val identifiant = miseAJourAnnulable ?: return@LaunchedEffect
 
