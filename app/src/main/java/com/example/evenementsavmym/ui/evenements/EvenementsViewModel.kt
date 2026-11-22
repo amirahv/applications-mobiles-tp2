@@ -8,9 +8,12 @@ import com.example.evenementsavmym.donnees.ticketmaster.ApiClient
 import com.example.evenementsavmym.modele.Evenement
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -103,5 +106,25 @@ class EvenementsViewModel(
                 chargement.value = false
             }
         }
+    }
+
+    fun observerDetail(idEvenement: String): Flow<EtatDetailEvenement> {
+        return dao.observerParId(idEvenement)
+            // transforme le résultat en état pour l’écran.
+            .map { evenement ->
+                EtatDetailEvenement(
+                    evenement = evenement,
+                    chargement = false
+                )
+            }
+            // transmet un état d’erreur si la lecture échoue. emit() envoie cet état aux observateurs.
+            .catch {
+                emit(
+                    EtatDetailEvenement(
+                        chargement = false,
+                        erreur = true
+                    )
+                )
+            }
     }
 }
