@@ -30,6 +30,12 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.material3.Button
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.runtime.key
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -50,8 +56,40 @@ fun EcranEvenements(
         evenementsViewModel.nombreMaximumPages
     )
 
+    val miseAJourAnnulable by evenementsViewModel.miseAJourAnnulable.collectAsState()
+    val etatSnackbar = remember { SnackbarHostState() }
+    val messageMiseAJour = stringResource(
+        R.string.evenements_mis_a_jour
+    )
+    val texteAnnuler = stringResource(R.string.annuler)
+
+    // Affiche une confirmation lorsqu'une nouvelle mise à jour réussit.
+    LaunchedEffect(miseAJourAnnulable, evenementsViewModel) {
+        val identifiant = miseAJourAnnulable ?: return@LaunchedEffect
+
+        val resultat = etatSnackbar.showSnackbar(
+            message = messageMiseAJour,
+            actionLabel = texteAnnuler,
+            withDismissAction = true,
+            duration = SnackbarDuration.Long
+        )
+
+        when (resultat) {
+            SnackbarResult.ActionPerformed -> {
+                evenementsViewModel.annulerMiseAJour(identifiant)
+            }
+
+            SnackbarResult.Dismissed -> {
+                evenementsViewModel.oublierAnnulation(identifiant)
+            }
+        }
+    }
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
+        snackbarHost = {
+            SnackbarHost(hostState = etatSnackbar)
+        },
         topBar = {
             TopAppBar(
                 title = {

@@ -37,4 +37,6 @@
     <string name="page_precedente">Previous</string>
     <string name="page_suivante">Next</string>
     <string name="page_evenements">Page %1$d of %2$d</string>
+    <string name="evenements_mis_a_jour">Events have been updated.</string>
+    <string name="annuler">Undo</string>
 </resources>
