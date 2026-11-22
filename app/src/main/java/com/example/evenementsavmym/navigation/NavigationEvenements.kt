@@ -20,7 +20,7 @@ fun NavigationEvenements() {
 
     // Critères de test pour développer notre partie séparément.////////////////////////////////////
     val criteresTest = CriteresRecherche(
-        ville = "Montréal"
+        ville = ""
     )
 
     NavHost(
