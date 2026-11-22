@@ -117,7 +117,7 @@ class EvenementsViewModel(
                     chargement = false
                 )
             }
-            // transmet un état d’erreur si la lecture échoue. emit() envoie cet état aux observateurs.
+            // transmet un état d’erreur si la lecture échoue. emit() envoie cet état aux observateurs (l’écran de détail).
             .catch {
                 emit(
                     EtatDetailEvenement(
