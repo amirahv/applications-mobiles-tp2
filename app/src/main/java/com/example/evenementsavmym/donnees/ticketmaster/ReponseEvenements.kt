@@ -84,11 +84,29 @@ data class LieuApi(
     val nom: String? = null,
 
     @SerialName("city")
-    val ville: VilleApi? = null
+    val ville: VilleApi? = null,
+
+    @SerialName("address")
+    val adresse: AdresseApi? = null,
+
+    @SerialName("country")
+    val pays: PaysApi? = null
 )
 
 @Serializable
 data class VilleApi(
+    @SerialName("name")
+    val nom: String? = null
+)
+
+@Serializable
+data class AdresseApi(
+    @SerialName("line1")
+    val ligne1: String? = null
+)
+
+@Serializable
+data class PaysApi(
     @SerialName("name")
     val nom: String? = null
 )

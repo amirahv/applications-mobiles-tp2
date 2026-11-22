@@ -48,7 +48,9 @@ class EvenementsViewModel : ViewModel() {
                             heureLocale = evenementApi.dates?.debut?.heureLocale,
                             statut = evenementApi.dates?.statut?.code,
                             categorie = classification?.segment?.nom,
-                            genre = classification?.genre?.nom
+                            genre = classification?.genre?.nom,
+                            adresse = lieu?.adresse?.ligne1,
+                            pays = lieu?.pays?.nom
                         )
                     }
 
