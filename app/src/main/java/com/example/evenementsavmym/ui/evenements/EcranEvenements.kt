@@ -24,6 +24,12 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.evenementsavmym.R
 import com.example.evenementsavmym.modele.CriteresRecherche
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.material3.Button
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.runtime.key
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -37,6 +43,12 @@ fun EcranEvenements(
     val chargement by evenementsViewModel.chargement.collectAsState()
     val erreurChargement by
     evenementsViewModel.erreurChargement.collectAsState()
+
+    val pagination by evenementsViewModel.pagination.collectAsState()
+    val nombrePagesAccessibles = minOf(
+        pagination?.nombreTotalPages ?: 0,
+        evenementsViewModel.nombreMaximumPages
+    )
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -68,6 +80,61 @@ fun EcranEvenements(
                         }
                     )
                 )
+            }
+        },
+        bottomBar = {
+            val pageActuelle = pagination
+
+            // Au démarrage, les évènements sauvegardés restent consultables.
+            // La pagination apparaît après un chargement réussi.
+            if (pageActuelle != null && nombrePagesAccessibles > 0) {
+                Surface(
+                    tonalElevation = 3.dp
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .navigationBarsPadding()
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = stringResource(
+                                R.string.page_evenements,
+                                pageActuelle.numero + 1,
+                                nombrePagesAccessibles
+                            ),
+                            style = MaterialTheme.typography.labelLarge
+                        )
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            OutlinedButton(
+                                onClick = {
+                                    evenementsViewModel.chargerPagePrecedente()
+                                },
+                                enabled = !chargement && pageActuelle.numero > 0,
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text(stringResource(R.string.page_precedente))
+                            }
+
+                            Button(
+                                onClick = {
+                                    evenementsViewModel.chargerPageSuivante()
+                                },
+                                enabled = !chargement &&
+                                        pageActuelle.numero + 1 < nombrePagesAccessibles,
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text(stringResource(R.string.page_suivante))
+                            }
+                        }
+                    }
+                }
             }
         }
     ) { innerPadding ->
@@ -115,11 +182,15 @@ fun EcranEvenements(
                     )
                 }
 
-                ListeEvenements(
-                    evenements = evenements,
-                    onEvenementClique = onEvenementClique,
-                    modifier = Modifier.fillMaxSize()
-                )
+                // Un changement de page affiche la nouvelle liste depuis le haut.
+                // key donne ici une identité à la liste selon le numéro de page. Lorsque ce numéro change, sa position de défilement repart du début.
+                key(pagination?.numero) {
+                    ListeEvenements(
+                        evenements = evenements,
+                        onEvenementClique = onEvenementClique,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
             }
         }
     }

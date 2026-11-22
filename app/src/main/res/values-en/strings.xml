@@ -34,4 +34,7 @@
     <string name="detail_annule">Canceled</string>
     <string name="detail_reporte">Postponed</string>
     <string name="detail_reprogramme">Rescheduled</string>
+    <string name="page_precedente">Previous</string>
+    <string name="page_suivante">Next</string>
+    <string name="page_evenements">Page %1$d of %2$d</string>
 </resources>
