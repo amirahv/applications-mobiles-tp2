@@ -49,14 +49,30 @@ class EvenementsViewModel(
     // Ticketmaster limite la pagination aux 1 000 premiers résultats.
     val nombreMaximumPages = 1000 / taillePage
 
+    // Copie conservée en mémoire pour restaurer l'état précédent.
+    private data class SauvegardeEvenements(
+        val evenements: List<Evenement>,
+        val pagination: PaginationApi?,
+        val criteres: CriteresRecherche?
+    )
+
+    private var sauvegardePrecedente: SauvegardeEvenements? = null
+
+    private var prochainIdentifiant = 0L
+
+    // Identifie la mise à jour que le Snackbar permettra d'annuler.
+    val miseAJourAnnulable = MutableStateFlow<Long?>(null)
+
     fun chargerEvenements(
         criteres: CriteresRecherche,
         pageDemandee: Int = 0
     ) {
         if (chargement.value) return
-
-        // Empêche de demander une page négative ou hors de la limite.
         if (pageDemandee !in 0 until nombreMaximumPages) return
+
+        // Une nouvelle demande remplace la possibilité d'annuler l'ancienne.
+        miseAJourAnnulable.value = null
+        sauvegardePrecedente = null
 
         chargement.value = true
         erreurChargement.value = false
@@ -140,6 +156,13 @@ class EvenementsViewModel(
                         )
                     }
 
+                // Lit directement Room pour conserver les résultats précédents.
+                val sauvegarde = SauvegardeEvenements(
+                    evenements = dao.obtenirTous(),
+                    pagination = pagination.value,
+                    criteres = criteresDernierChargement
+                )
+
                 // Sauvegarde les nouveaux résultats.
                 // Le Flow de Room mettra ensuite l'écran à jour.
                 dao.remplacerTous(nouveauxEvenements)
@@ -147,6 +170,12 @@ class EvenementsViewModel(
                 // Ces informations changent seulement après une sauvegarde réussie.
                 criteresDernierChargement = criteres
                 pagination.value = reponse.page
+
+                // L'annulation devient disponible seulement après la réussite.
+                sauvegardePrecedente = sauvegarde
+
+                prochainIdentifiant += 1
+                miseAJourAnnulable.value = prochainIdentifiant
 
             } catch (e: CancellationException) {
                 throw e
@@ -187,6 +216,44 @@ class EvenementsViewModel(
             criteres = criteres,
             pageDemandee = pageActuelle.numero + 1
         )
+    }
+
+    fun oublierAnnulation(identifiant: Long) {
+        // Un ancien message ne doit pas effacer une annulation plus récente.
+        if (miseAJourAnnulable.value != identifiant) return
+
+        miseAJourAnnulable.value = null
+        sauvegardePrecedente = null
+    }
+
+    fun annulerMiseAJour(identifiant: Long) {
+        if (chargement.value) return
+        if (miseAJourAnnulable.value != identifiant) return
+
+        val sauvegarde = sauvegardePrecedente ?: return
+
+        chargement.value = true
+        erreurChargement.value = false
+
+        // La copie locale reste utilisable pour la restauration.
+        oublierAnnulation(identifiant)
+
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                // Restaure les évènements sans appeler Ticketmaster.
+                dao.remplacerTous(sauvegarde.evenements)
+
+                criteresDernierChargement = sauvegarde.criteres
+                pagination.value = sauvegarde.pagination
+
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                erreurChargement.value = true
+            } finally {
+                chargement.value = false
+            }
+        }
     }
 
     fun observerDetail(idEvenement: String): Flow<EtatDetailEvenement> {
