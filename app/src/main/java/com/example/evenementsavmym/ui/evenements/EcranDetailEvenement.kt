@@ -137,3 +137,164 @@ fun EcranDetailEvenement(
         }
     }
 }
+
+@Composable
+private fun ContenuDetailEvenement(
+    evenement: Evenement,
+    onOuvrirBilletterie: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val locale = LocalConfiguration.current.locales[0]
+    val formatNombre = remember(locale) {
+        NumberFormat.getNumberInstance(locale).apply {
+            minimumFractionDigits = 2
+            maximumFractionDigits = 2
+        }
+    }
+
+    // Présente les montants disponibles sans répéter un prix identique.
+    val prix = listOfNotNull(evenement.prixMin, evenement.prixMax)
+        .distinct()
+        .joinToString(" – ") { formatNombre.format(it) }
+
+    Column(
+        modifier = modifier
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Text(
+            text = evenement.nom,
+            style = MaterialTheme.typography.headlineSmall
+        )
+
+        AsyncImage(
+            model = evenement.imageUrl,
+            contentDescription = null,
+            contentScale = ContentScale.Fit,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(220.dp)
+                .clip(RoundedCornerShape(16.dp))
+                .background(MaterialTheme.colorScheme.secondaryContainer)
+        )
+
+        Card(modifier = Modifier.fillMaxWidth()) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                ChampDetail(
+                    stringResource(R.string.detail_date),
+                    evenement.dateLocale
+                )
+
+                ChampDetail(
+                    stringResource(R.string.detail_heure),
+                    evenement.heureLocale?.take(5)
+                )
+
+                ChampDetail(
+                    stringResource(R.string.detail_statut),
+                    texteStatut(evenement.statut)
+                )
+
+                ChampDetail(
+                    stringResource(R.string.detail_categorie),
+                    evenement.categorie
+                )
+
+                ChampDetail(
+                    stringResource(R.string.detail_genre),
+                    evenement.genre
+                )
+
+                ChampDetail(
+                    stringResource(R.string.detail_salle),
+                    evenement.salle
+                )
+
+                ChampDetail(
+                    stringResource(R.string.detail_adresse),
+                    evenement.adresse
+                )
+
+                ChampDetail(
+                    stringResource(R.string.detail_ville),
+                    evenement.ville
+                )
+
+                ChampDetail(
+                    stringResource(R.string.detail_pays),
+                    evenement.pays
+                )
+
+                if (prix.isNotBlank()) {
+                    ChampDetail(
+                        stringResource(R.string.detail_prix),
+                        "$prix ${evenement.devise.orEmpty()}".trim()
+                    )
+                }
+
+                ChampDetail(
+                    stringResource(R.string.detail_debut_vente),
+                    evenement.dateDebutVenteUtc
+                )
+
+                if (!evenement.informations.isNullOrBlank()) {
+                    ChampDetail(
+                        stringResource(R.string.detail_informations),
+                        evenement.informations
+                    )
+                }
+            }
+        }
+
+        val url = evenement.billetterieUrl
+
+        if (!url.isNullOrBlank()) {
+            Button(
+                onClick = { onOuvrirBilletterie(url) },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(stringResource(R.string.detail_billetterie))
+            }
+        }
+    }
+}
+
+@Composable
+private fun ChampDetail(
+    libelle: String,
+    valeur: String?
+) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        Text(
+            text = libelle,
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.primary
+        )
+
+        Text(
+            text = valeur?.takeIf { it.isNotBlank() }
+                ?: stringResource(R.string.detail_non_disponible),
+            style = MaterialTheme.typography.bodyLarge
+        )
+    }
+}
+
+@Composable
+private fun texteStatut(code: String?): String {
+    val ressource = when (code) {
+        "onsale" -> R.string.detail_en_vente
+        "offsale" -> R.string.detail_hors_vente
+        "canceled" -> R.string.detail_annule
+        "postponed" -> R.string.detail_reporte
+        "rescheduled" -> R.string.detail_reprogramme
+        else -> R.string.detail_non_disponible
+    }
+
+    return stringResource(ressource)
+}
