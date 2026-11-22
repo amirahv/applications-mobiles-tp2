@@ -37,11 +37,11 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil3.compose.AsyncImage
 import com.example.evenementsavmym.R
 import com.example.evenementsavmym.modele.Evenement
-import coil3.compose.AsyncImage
-import java.text.NumberFormat
 import kotlinx.coroutines.launch
+import java.text.NumberFormat
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
