@@ -1,60 +1,79 @@
 package com.example.evenementsavmym.ui.evenements
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.evenementsavmym.donnees.room.BaseEvenements
 import com.example.evenementsavmym.donnees.ticketmaster.ApiClient
 import com.example.evenementsavmym.modele.Evenement
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-class EvenementsViewModel : ViewModel() {
+class EvenementsViewModel(
+    application: Application
+) : AndroidViewModel(application) {
 
-    val evenements = MutableStateFlow<List<Evenement>>(emptyList())
+    private val dao = BaseEvenements
+        .obtenirInstance(application)
+        .evenementDao()
+
+    // La liste affichée provient de Room.
+    val evenements: StateFlow<List<Evenement>> = dao.observerTous()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+
     val chargement = MutableStateFlow(false)
     val erreurChargement = MutableStateFlow(false)
 
     fun chargerEvenements() {
-        // Empêche plusieurs requêtes simultanées.
         if (chargement.value) return
 
         chargement.value = true
         erreurChargement.value = false
 
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             try {
                 val reponse = ApiClient.apiService.obtenirEvenements()
 
-                // Transforme les données de l'API en objets pour notre écran.
-                evenements.value = reponse.contenu
+                val nouveauxEvenements = reponse.contenu
                     ?.evenements
-                    // Produit une liste vide si la réponse ne contient aucun évènement.
                     .orEmpty()
-                    // Convertit chaque EvenementApi en notre modèle Evenement
                     .map { evenementApi ->
-                        val lieu = evenementApi.contenu?.lieux?.firstOrNull()
-                        val classification = evenementApi.classifications.firstOrNull()
+                        val lieu =
+                            evenementApi.contenu?.lieux?.firstOrNull()
+
+                        val classification =
+                            evenementApi.classifications.firstOrNull()
+
                         val prix = evenementApi.prix.firstOrNull()
-                        // Regroupe les informations et les remarques disponibles.
+
                         val informations = listOfNotNull(
                             evenementApi.informations,
                             evenementApi.remarques
                         )
                             .filter { it.isNotBlank() }
-                            // les sépare par une ligne vide
                             .joinToString("\n\n")
-                            // retourne null si aucun texte ne reste
                             .takeIf { it.isNotBlank() }
-
 
                         Evenement(
                             id = evenementApi.id,
                             nom = evenementApi.nom,
-                            dateLocale = evenementApi.dates?.debut?.dateLocale,
+                            dateLocale =
+                                evenementApi.dates?.debut?.dateLocale,
                             salle = lieu?.nom,
                             ville = lieu?.ville?.nom,
-                            imageUrl = evenementApi.images.firstOrNull()?.url,
-                            heureLocale = evenementApi.dates?.debut?.heureLocale,
+                            imageUrl =
+                                evenementApi.images.firstOrNull()?.url,
+                            heureLocale =
+                                evenementApi.dates?.debut?.heureLocale,
                             statut = evenementApi.dates?.statut?.code,
                             categorie = classification?.segment?.nom,
                             genre = classification?.genre?.nom,
@@ -63,16 +82,22 @@ class EvenementsViewModel : ViewModel() {
                             prixMin = prix?.minimum,
                             prixMax = prix?.maximum,
                             devise = prix?.devise,
-                            dateDebutVenteUtc = evenementApi.ventes?.ventePublique?.dateDebutUtc,
+                            dateDebutVenteUtc =
+                                evenementApi.ventes
+                                    ?.ventePublique?.dateDebutUtc,
                             informations = informations,
                             billetterieUrl = evenementApi.billetterieUrl
                         )
                     }
 
+                // Sauvegarde les nouveaux résultats.
+                // Le Flow de Room mettra ensuite l'écran à jour.
+                dao.remplacerTous(nouveauxEvenements)
+
             } catch (e: CancellationException) {
-                // Laisse Android annuler normalement la coroutine.
                 throw e
             } catch (e: Exception) {
+                // Les anciens évènements restent disponibles si l'opération échoue.
                 erreurChargement.value = true
             } finally {
                 chargement.value = false
