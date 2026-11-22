@@ -23,11 +23,13 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.evenementsavmym.R
+import com.example.evenementsavmym.modele.CriteresRecherche
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EcranEvenements(
     onEvenementClique: (String) -> Unit,
+    criteres: CriteresRecherche = CriteresRecherche(),
     modifier: Modifier = Modifier,
     evenementsViewModel: EvenementsViewModel = viewModel()
 ) {
@@ -53,7 +55,7 @@ fun EcranEvenements(
             ExtendedFloatingActionButton(
                 onClick = {
                     if (!chargement) {
-                        evenementsViewModel.chargerEvenements()
+                        evenementsViewModel.chargerEvenements(criteres)
                     }
                 }
             ) {

@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import com.example.evenementsavmym.modele.CriteresRecherche
 
 class EvenementsViewModel(
     application: Application
@@ -36,7 +37,7 @@ class EvenementsViewModel(
     val chargement = MutableStateFlow(false)
     val erreurChargement = MutableStateFlow(false)
 
-    fun chargerEvenements() {
+    fun chargerEvenements(criteres: CriteresRecherche) {
         if (chargement.value) return
 
         chargement.value = true
@@ -44,7 +45,35 @@ class EvenementsViewModel(
 
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                val reponse = ApiClient.apiService.obtenirEvenements()
+                val reponse = ApiClient.apiService.obtenirEvenements(
+                    codePays = criteres.codePays
+                        .trim()
+                        .uppercase()
+                        .ifBlank { "CA" },
+
+                    categorie = criteres.categorie
+                        ?.trim()
+                        ?.takeIf { it.isNotBlank() },
+
+                    langue = criteres.langue
+                        .trim()
+                        .ifBlank { "*" },
+
+                    ville = criteres.ville
+                        ?.trim()
+                        ?.takeIf { it.isNotBlank() },
+
+                    dateDebutUtc = criteres.dateDebutUtc
+                        ?.trim()
+                        ?.takeIf { it.isNotBlank() },
+
+                    dateFinUtc = criteres.dateFinUtc
+                        ?.trim()
+                        ?.takeIf { it.isNotBlank() },
+
+                    taillePage = 20,
+                    page = 0
+                )
 
                 val nouveauxEvenements = reponse.contenu
                     ?.evenements
