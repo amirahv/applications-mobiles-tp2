@@ -1,6 +1,27 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    id("org.jetbrains.kotlin.plugin.serialization") version "2.4.21"
+
+    id("com.google.devtools.ksp")
+}
+
+// Lit la configuration locale du projet.
+val proprietesLocales = Properties().apply {
+    rootProject.file("local.properties").inputStream().use {
+        load(it)
+    }
+}
+
+// Récupère la clé sans l'écrire dans le code partagé.
+val cleTicketmaster = proprietesLocales
+    .getProperty("TICKETMASTER_API_KEY", "")
+    .trim()
+
+require(cleTicketmaster.isNotBlank()) {
+    "Ajoute TICKETMASTER_API_KEY dans local.properties."
 }
 
 android {
@@ -17,6 +38,13 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // Cette instruction demande à Gradle de créer une constante nommée TICKETMASTER_API_KEY
+        buildConfigField(
+            "String",
+            "TICKETMASTER_API_KEY",
+            "\"$cleTicketmaster\""
+        )
     }
 
     buildTypes {
@@ -33,10 +61,29 @@ android {
     }
     buildFeatures {
         compose = true
+
+        //active la génération de la classe BuildConfig
+        buildConfig = true
     }
 }
 
 dependencies {
+    // Retrofit & Serialization
+    implementation("com.squareup.retrofit2:retrofit:3.0.0")
+    implementation("com.squareup.retrofit2:converter-kotlinx-serialization:3.0.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
+    // ViewModel
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.11.0")
+    // Images : version utilisée dans le cours.
+    implementation("io.coil-kt.coil3:coil-compose:3.3.0")
+    implementation("io.coil-kt.coil3:coil-network-okhttp:3.3.0")
+    // Base de données locale.
+    implementation("androidx.room:room-runtime:2.8.5")
+    implementation("androidx.room:room-ktx:2.8.5")
+    // Génération du code nécessaire à Room.
+    ksp("androidx.room:room-compiler:2.8.5")
+    // Navigation : version utilisée dans le cours.
+    implementation("androidx.navigation:navigation-compose:2.10.2")
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.compose.material3)
