@@ -28,6 +28,10 @@ interface EvenementDao {
     @Query("DELETE FROM evenements")
     suspend fun supprimerTous()
 
+    // Lit une fois la liste sauvegardée pour préparer une annulation.
+    @Query("SELECT * FROM evenements")
+    suspend fun obtenirTous(): List<Evenement>
+
     // Remplace les anciens résultats par ceux du rafraîchissement.
     @Transaction
     suspend fun remplacerTous(evenements: List<Evenement>) {
