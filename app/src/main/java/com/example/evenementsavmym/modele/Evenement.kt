@@ -1,7 +1,13 @@
 package com.example.evenementsavmym.modele
 
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+
+@Entity(tableName = "evenements")
 data class Evenement(
+    @PrimaryKey
     val id: String,
+
     val nom: String,
     val dateLocale: String? = null,
     val salle: String? = null,

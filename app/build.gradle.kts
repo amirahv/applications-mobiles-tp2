@@ -4,6 +4,8 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     id("org.jetbrains.kotlin.plugin.serialization") version "2.4.21"
+
+    id("com.google.devtools.ksp")
 }
 
 // Lit la configuration locale du projet.
@@ -59,6 +61,7 @@ android {
     }
     buildFeatures {
         compose = true
+
         //active la génération de la classe BuildConfig
         buildConfig = true
     }
@@ -74,6 +77,11 @@ dependencies {
     // Images : version utilisée dans le cours.
     implementation("io.coil-kt.coil3:coil-compose:3.3.0")
     implementation("io.coil-kt.coil3:coil-network-okhttp:3.3.0")
+    // Base de données locale.
+    implementation("androidx.room:room-runtime:2.8.5")
+    implementation("androidx.room:room-ktx:2.8.5")
+    // Génération du code nécessaire à Room.
+    ksp("androidx.room:room-compiler:2.8.5")
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.compose.material3)
