@@ -6,7 +6,9 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class ReponseEvenements(
     @SerialName("_embedded")
-    val contenu: ContenuEvenements? = null
+    val contenu: ContenuEvenements? = null,
+
+    val page: PaginationApi? = null
 )
 
 @Serializable
@@ -148,4 +150,19 @@ data class VentesApi(
 data class VentePubliqueApi(
     @SerialName("startDateTime")
     val dateDebutUtc: String? = null
+)
+
+@Serializable
+data class PaginationApi(
+    @SerialName("size")
+    val taille: Int = 20,
+
+    @SerialName("totalElements")
+    val nombreTotalEvenements: Int = 0,
+
+    @SerialName("totalPages")
+    val nombreTotalPages: Int = 0,
+
+    @SerialName("number")
+    val numero: Int = 0
 )
