@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import com.example.evenementsavmym.modele.CriteresRecherche
+import com.example.evenementsavmym.donnees.ticketmaster.PaginationApi
 
 class EvenementsViewModel(
     application: Application
@@ -37,8 +38,25 @@ class EvenementsViewModel(
     val chargement = MutableStateFlow(false)
     val erreurChargement = MutableStateFlow(false)
 
-    fun chargerEvenements(criteres: CriteresRecherche) {
+    // Informations sur la page du dernier chargement réussi.
+    val pagination = MutableStateFlow<PaginationApi?>(null)
+
+    // Les changements de page conservent la même recherche.
+    private var criteresDernierChargement: CriteresRecherche? = null
+
+    private val taillePage = 20
+
+    // Ticketmaster limite la pagination aux 1 000 premiers résultats.
+    val nombreMaximumPages = 1000 / taillePage
+
+    fun chargerEvenements(
+        criteres: CriteresRecherche,
+        pageDemandee: Int = 0
+    ) {
         if (chargement.value) return
+
+        // Empêche de demander une page négative ou hors de la limite.
+        if (pageDemandee !in 0 until nombreMaximumPages) return
 
         chargement.value = true
         erreurChargement.value = false
@@ -71,8 +89,8 @@ class EvenementsViewModel(
                         ?.trim()
                         ?.takeIf { it.isNotBlank() },
 
-                    taillePage = 20,
-                    page = 0
+                    taillePage = taillePage,
+                    page = pageDemandee
                 )
 
                 val nouveauxEvenements = reponse.contenu
@@ -126,6 +144,10 @@ class EvenementsViewModel(
                 // Le Flow de Room mettra ensuite l'écran à jour.
                 dao.remplacerTous(nouveauxEvenements)
 
+                // Ces informations changent seulement après une sauvegarde réussie.
+                criteresDernierChargement = criteres
+                pagination.value = reponse.page
+
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -135,6 +157,36 @@ class EvenementsViewModel(
                 chargement.value = false
             }
         }
+    }
+
+    fun chargerPagePrecedente() {
+        val pageActuelle = pagination.value ?: return
+        val criteres = criteresDernierChargement ?: return
+
+        if (pageActuelle.numero <= 0) return
+
+        chargerEvenements(
+            criteres = criteres,
+            pageDemandee = pageActuelle.numero - 1
+        )
+    }
+
+    fun chargerPageSuivante() {
+        val pageActuelle = pagination.value ?: return
+        val criteres = criteresDernierChargement ?: return
+
+        // Respecte le nombre de pages annoncé et la limite de Ticketmaster.
+        val nombrePagesAccessibles = minOf(
+            pageActuelle.nombreTotalPages,
+            nombreMaximumPages
+        )
+
+        if (pageActuelle.numero + 1 >= nombrePagesAccessibles) return
+
+        chargerEvenements(
+            criteres = criteres,
+            pageDemandee = pageActuelle.numero + 1
+        )
     }
 
     fun observerDetail(idEvenement: String): Flow<EtatDetailEvenement> {
