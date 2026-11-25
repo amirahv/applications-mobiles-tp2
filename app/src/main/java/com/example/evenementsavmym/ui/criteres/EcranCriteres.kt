@@ -1,23 +1,60 @@
-
 package com.example.evenementsavmym.ui.criteres
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.ExperimentalMaterial3Api
+import com.example.evenementsavmym.modele.CriteresRecherche
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CriteresScreen(
-    onRetour: () -> Unit,
-    viewModel: CriteresViewModel = viewModel()
+fun EcranCriteres(
+    viewModel: CriteresViewModel,
+    onDeconnexion: () -> Unit
 ) {
 
-    val state by viewModel.uiState.collectAsState()
+    val etat by viewModel.etat.collectAsState()
+
+    var pays by remember {
+        mutableStateOf("CA")
+    }
+
+    var ville by remember {
+        mutableStateOf("")
+    }
+
+    var categorie by remember {
+        mutableStateOf("")
+    }
+
+    var langue by remember {
+        mutableStateOf("*")
+    }
+
+    var dateDebut by remember {
+        mutableStateOf("")
+    }
+
+    var dateFin by remember {
+        mutableStateOf("")
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.chargerCriteres()
+    }
+
+    LaunchedEffect(etat.criteres) {
+        pays = etat.criteres.codePays
+        ville = etat.criteres.ville ?: ""
+        categorie = etat.criteres.categorie ?: ""
+        langue = etat.criteres.langue
+        dateDebut = etat.criteres.dateDebutUtc ?: ""
+        dateFin = etat.criteres.dateFinUtc ?: ""
+    }
 
     Scaffold(
         topBar = {
@@ -25,9 +62,11 @@ fun CriteresScreen(
                 title = {
                     Text("Critères de recherche")
                 },
-                navigationIcon = {
-                    TextButton(onClick = onRetour) {
-                        Text("Retour")
+                actions = {
+                    TextButton(
+                        onClick = onDeconnexion
+                    ) {
+                        Text("Déconnexion")
                     }
                 }
             )
@@ -38,95 +77,73 @@ fun CriteresScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(20.dp)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+                .verticalScroll(rememberScrollState())
+                .padding(20.dp),
+
+            verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
 
-            if (state.chargement) {
-                LinearProgressIndicator(
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-
-            Text(
-                text = "Pays",
-                style = MaterialTheme.typography.titleMedium
-            )
-
             OutlinedTextField(
-                value = state.criteres.codePays,
-                onValueChange = viewModel::modifierPays,
-                label = { Text("Code du pays (CA)") },
+                value = pays,
+                onValueChange = { pays = it.uppercase() },
+                label = { Text("Code du pays") },
+                supportingText = {
+                    Text("Exemple : CA")
+                },
                 modifier = Modifier.fillMaxWidth()
             )
 
-            Text(
-                text = "Ville",
-                style = MaterialTheme.typography.titleMedium
-            )
-
             OutlinedTextField(
-                value = state.criteres.ville ?: "",
-                onValueChange = viewModel::modifierVille,
+                value = ville,
+                onValueChange = { ville = it },
                 label = { Text("Ville") },
                 placeholder = { Text("Montréal") },
                 modifier = Modifier.fillMaxWidth()
             )
 
-            Text(
-                text = "Catégorie",
-                style = MaterialTheme.typography.titleMedium
-            )
+            Text("Catégorie")
 
             var categorieOuverte by remember {
                 mutableStateOf(false)
             }
 
-            val categories = listOf(
-                "Toutes" to "",
-                "Musique" to "Music",
-                "Sports" to "Sports",
-                "Arts et théâtre" to "Arts & Theatre",
-                "Famille" to "Family"
-            )
+            Box {
 
-            ExposedDropdownMenuBox(
-                expanded = categorieOuverte,
-                onExpandedChange = {
-                    categorieOuverte = !categorieOuverte
-                }
-            ) {
-
-                OutlinedTextField(
-                    value = categories.firstOrNull {
-                        it.second == (state.criteres.categorie ?: "")
-                    }?.first ?: "Toutes",
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text("Catégorie") },
-                    trailingIcon = {
-                        ExposedDropdownMenuDefaults.TrailingIcon(
-                            expanded = categorieOuverte
-                        )
+                OutlinedButton(
+                    onClick = {
+                        categorieOuverte = true
                     },
-                    modifier = Modifier
-                        .menuAnchor()
-                        .fillMaxWidth()
-                )
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        if (categorie.isBlank()) {
+                            "Toutes les catégories"
+                        } else {
+                            categorie
+                        }
+                    )
+                }
 
-                ExposedDropdownMenu(
+                DropdownMenu(
                     expanded = categorieOuverte,
                     onDismissRequest = {
                         categorieOuverte = false
                     }
                 ) {
-                    categories.forEach { (label, valeur) ->
+
+                    listOf(
+                        "Toutes les catégories" to "",
+                        "Musique" to "Music",
+                        "Sports" to "Sports",
+                        "Arts et théâtre" to "Arts & Theatre",
+                        "Famille" to "Family",
+                        "Autres" to "Miscellaneous"
+                    ).forEach { (libelle, valeur) ->
 
                         DropdownMenuItem(
-                            text = { Text(label) },
+                            text = { Text(libelle) },
                             onClick = {
-                                viewModel.modifierCategorie(valeur)
+                                categorie = valeur
                                 categorieOuverte = false
                             }
                         )
@@ -134,42 +151,30 @@ fun CriteresScreen(
                 }
             }
 
-            Text(
-                text = "Langue",
-                style = MaterialTheme.typography.titleMedium
-            )
+            Text("Langue des résultats")
 
             var langueOuverte by remember {
                 mutableStateOf(false)
             }
 
-            ExposedDropdownMenuBox(
-                expanded = langueOuverte,
-                onExpandedChange = {
-                    langueOuverte = !langueOuverte
+            Box {
+
+                OutlinedButton(
+                    onClick = {
+                        langueOuverte = true
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        when (langue) {
+                            "fr" -> "Français"
+                            "en" -> "English"
+                            else -> "Toutes les langues"
+                        }
+                    )
                 }
-            ) {
 
-                OutlinedTextField(
-                    value = when (state.criteres.langue) {
-                        "fr" -> "Français"
-                        "en" -> "English"
-                        else -> "Toutes"
-                    },
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text("Langue") },
-                    trailingIcon = {
-                        ExposedDropdownMenuDefaults.TrailingIcon(
-                            expanded = langueOuverte
-                        )
-                    },
-                    modifier = Modifier
-                        .menuAnchor()
-                        .fillMaxWidth()
-                )
-
-                ExposedDropdownMenu(
+                DropdownMenu(
                     expanded = langueOuverte,
                     onDismissRequest = {
                         langueOuverte = false
@@ -177,15 +182,15 @@ fun CriteresScreen(
                 ) {
 
                     listOf(
-                        "Toutes" to "*",
+                        "Toutes les langues" to "*",
                         "Français" to "fr",
                         "English" to "en"
-                    ).forEach { (label, valeur) ->
+                    ).forEach { (libelle, valeur) ->
 
                         DropdownMenuItem(
-                            text = { Text(label) },
+                            text = { Text(libelle) },
                             onClick = {
-                                viewModel.modifierLangue(valeur)
+                                langue = valeur
                                 langueOuverte = false
                             }
                         )
@@ -193,14 +198,9 @@ fun CriteresScreen(
                 }
             }
 
-            Text(
-                text = "Dates facultatives",
-                style = MaterialTheme.typography.titleMedium
-            )
-
             OutlinedTextField(
-                value = state.criteres.dateDebutUtc ?: "",
-                onValueChange = viewModel::modifierDateDebut,
+                value = dateDebut,
+                onValueChange = { dateDebut = it },
                 label = { Text("Date de début UTC") },
                 placeholder = {
                     Text("2026-12-01T00:00:00Z")
@@ -209,8 +209,8 @@ fun CriteresScreen(
             )
 
             OutlinedTextField(
-                value = state.criteres.dateFinUtc ?: "",
-                onValueChange = viewModel::modifierDateFin,
+                value = dateFin,
+                onValueChange = { dateFin = it },
                 label = { Text("Date de fin UTC") },
                 placeholder = {
                     Text("2026-12-31T23:59:59Z")
@@ -218,34 +218,44 @@ fun CriteresScreen(
                 modifier = Modifier.fillMaxWidth()
             )
 
-            if (state.erreur != null) {
-                Text(
-                    text = state.erreur!!,
-                    color = MaterialTheme.colorScheme.error
-                )
-            }
-
-            if (state.message != null) {
-                Text(
-                    text = state.message!!,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
-
             Button(
-                onClick = viewModel::sauvegarderCriteres,
+                onClick = {
+
+                    viewModel.modifierCriteres(
+                        CriteresRecherche(
+                            codePays = pays.trim(),
+                            categorie = categorie.ifBlank { null },
+                            langue = langue,
+                            ville = ville.trim().ifBlank { null },
+                            dateDebutUtc = dateDebut.trim().ifBlank { null },
+                            dateFinUtc = dateFin.trim().ifBlank { null }
+                        )
+                    )
+
+                    viewModel.sauvegarderCriteres()
+                },
                 modifier = Modifier.fillMaxWidth(),
-                enabled = !state.chargement
+                enabled = !etat.chargement
             ) {
                 Text("Enregistrer les critères")
             }
 
-            OutlinedButton(
-                onClick = viewModel::chargerCriteres,
-                modifier = Modifier.fillMaxWidth(),
-                enabled = !state.chargement
-            ) {
-                Text("Recharger les critères")
+            if (etat.chargement) {
+                CircularProgressIndicator()
+            }
+
+            if (etat.sauvegardeReussie) {
+                Text(
+                    text = "Critères enregistrés avec succès.",
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+
+            etat.erreur?.let {
+                Text(
+                    text = it,
+                    color = MaterialTheme.colorScheme.error
+                )
             }
         }
     }

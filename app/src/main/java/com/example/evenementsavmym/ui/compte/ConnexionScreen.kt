@@ -1,91 +1,152 @@
-
 package com.example.evenementsavmym.ui.compte
 
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ConnexionScreen(
-    onConnexionReussie: () -> Unit,
-    viewModel: ConnexionViewModel = viewModel()
+    viewModel: ConnexionViewModel,
+    onConnexionReussie: () -> Unit
 ) {
 
-    val state by viewModel.uiState.collectAsState()
+    val etat by viewModel.etat.collectAsState()
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(24.dp),
-        verticalArrangement = Arrangement.Center
-    ) {
+    var courriel by remember { mutableStateOf("") }
+    var motDePasse by remember { mutableStateOf("") }
 
-        Text(
-            text = "EvenementsAVMYM",
-            style = MaterialTheme.typography.headlineMedium
-        )
+    var modeInscription by remember {
+        mutableStateOf(false)
+    }
 
-        Spacer(modifier = Modifier.height(24.dp))
+    LaunchedEffect(etat.connecte) {
+        if (etat.connecte) {
+            onConnexionReussie()
+        }
+    }
 
-        OutlinedTextField(
-            value = state.email,
-            onValueChange = viewModel::modifierEmail,
-            label = { Text("Adresse courriel") },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true
-        )
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        OutlinedTextField(
-            value = state.motDePasse,
-            onValueChange = viewModel::modifierMotDePasse,
-            label = { Text("Mot de passe") },
-            visualTransformation = PasswordVisualTransformation(),
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true
-        )
-
-        Spacer(modifier = Modifier.height(20.dp))
-
-        if (state.erreur != null) {
-            Text(
-                text = state.erreur!!,
-                color = MaterialTheme.colorScheme.error
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text("EvenementsAVMYM")
+                }
             )
         }
+    ) { padding ->
 
-        Button(
-            onClick = {
-                viewModel.connecter(onConnexionReussie)
-            },
-            modifier = Modifier.fillMaxWidth(),
-            enabled = !state.chargement
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(24.dp),
+
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
-            if (state.chargement) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(20.dp),
-                    strokeWidth = 2.dp
+
+            Text(
+                text = if (modeInscription) {
+                    "Créer un compte"
+                } else {
+                    "Connexion"
+                },
+                style = MaterialTheme.typography.headlineMedium
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            OutlinedTextField(
+                value = courriel,
+                onValueChange = { courriel = it },
+                label = { Text("Adresse courriel") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            OutlinedTextField(
+                value = motDePasse,
+                onValueChange = { motDePasse = it },
+                label = { Text("Mot de passe") },
+                visualTransformation = PasswordVisualTransformation(),
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
+            )
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            Button(
+                onClick = {
+                    if (modeInscription) {
+                        viewModel.inscrire(
+                            courriel,
+                            motDePasse
+                        )
+                    } else {
+                        viewModel.connecter(
+                            courriel,
+                            motDePasse
+                        )
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !etat.chargement
+            ) {
+                Text(
+                    if (modeInscription) {
+                        "Créer un compte"
+                    } else {
+                        "Se connecter"
+                    }
                 )
-            } else {
-                Text("Se connecter")
             }
-        }
 
-        Spacer(modifier = Modifier.height(12.dp))
+            TextButton(
+                onClick = {
+                    modeInscription = !modeInscription
+                    viewModel.effacerErreur()
+                }
+            ) {
+                Text(
+                    if (modeInscription) {
+                        "Déjà inscrit ? Se connecter"
+                    } else {
+                        "Créer un compte"
+                    }
+                )
+            }
 
-        OutlinedButton(
-            onClick = {
-                viewModel.creerCompte(onConnexionReussie)
-            },
-            modifier = Modifier.fillMaxWidth(),
-            enabled = !state.chargement
-        ) {
-            Text("Créer un compte")
+            if (etat.chargement) {
+                CircularProgressIndicator()
+            }
+
+            etat.erreur?.let { erreur ->
+                Text(
+                    text = erreur,
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
         }
     }
 }

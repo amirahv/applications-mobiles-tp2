@@ -1,52 +1,40 @@
-
 package com.example.evenementsavmym.ui.compte
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.evenementsavmym.donnees.firebase.AuthRepository
+import com.example.evenementsavmym.donnees.firebase.AuthFirebase
 import com.example.evenementsavmym.donnees.firebase.FirestoreRepository
 import com.example.evenementsavmym.modele.ProfilUtilisateur
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-data class ConnexionUiState(
-    val email: String = "",
-    val motDePasse: String = "",
+data class ConnexionEtat(
     val chargement: Boolean = false,
+    val connecte: Boolean = false,
     val erreur: String? = null
 )
 
 class ConnexionViewModel : ViewModel() {
 
-    private val authRepository = AuthRepository()
-    private val firestoreRepository = FirestoreRepository()
+    private val auth = AuthFirebase()
+    private val repository = FirestoreRepository()
 
-    private val _uiState = MutableStateFlow(ConnexionUiState())
-    val uiState: StateFlow<ConnexionUiState> = _uiState.asStateFlow()
-
-    fun modifierEmail(email: String) {
-        _uiState.value = _uiState.value.copy(
-            email = email,
-            erreur = null
+    private val _etat = MutableStateFlow(
+        ConnexionEtat(
+            connecte = auth.utilisateurActuel() != null
         )
-    }
+    )
 
-    fun modifierMotDePasse(motDePasse: String) {
-        _uiState.value = _uiState.value.copy(
-            motDePasse = motDePasse,
-            erreur = null
-        )
-    }
+    val etat: StateFlow<ConnexionEtat> = _etat
 
-    fun connecter(onSucces: () -> Unit) {
+    fun connecter(
+        courriel: String,
+        motDePasse: String
+    ) {
 
-        val email = _uiState.value.email.trim()
-        val motDePasse = _uiState.value.motDePasse
-
-        if (email.isBlank() || motDePasse.isBlank()) {
-            _uiState.value = _uiState.value.copy(
+        if (courriel.isBlank() || motDePasse.isBlank()) {
+            _etat.value = _etat.value.copy(
                 erreur = "Veuillez remplir tous les champs."
             )
             return
@@ -54,96 +42,93 @@ class ConnexionViewModel : ViewModel() {
 
         viewModelScope.launch {
 
-            _uiState.value = _uiState.value.copy(
-                chargement = true,
-                erreur = null
+            _etat.value = ConnexionEtat(chargement = true)
+
+            val resultat = auth.connecter(
+                courriel,
+                motDePasse
             )
 
-            try {
+            resultat.onSuccess { utilisateur ->
 
-                val utilisateur = authRepository.connecter(
-                    email,
-                    motDePasse
-                )
-
-                if (utilisateur != null) {
-
-                    firestoreRepository.sauvegarderProfil(
-                        ProfilUtilisateur(
-                            uid = utilisateur.uid,
-                            email = utilisateur.email ?: "",
-                            nom = utilisateur.displayName ?: ""
-                        )
+                repository.sauvegarderProfil(
+                    ProfilUtilisateur(
+                        uid = utilisateur.uid,
+                        courriel = utilisateur.email ?: ""
                     )
-                }
-
-                _uiState.value = _uiState.value.copy(
-                    chargement = false
                 )
 
-                onSucces()
+                _etat.value = ConnexionEtat(
+                    connecte = true
+                )
+            }
 
-            } catch (e: Exception) {
+            resultat.onFailure { erreur ->
 
-                _uiState.value = _uiState.value.copy(
-                    chargement = false,
-                    erreur = e.localizedMessage
+                _etat.value = ConnexionEtat(
+                    erreur = erreur.message
                         ?: "Erreur de connexion."
                 )
             }
         }
     }
 
-    fun creerCompte(onSucces: () -> Unit) {
+    fun inscrire(
+        courriel: String,
+        motDePasse: String
+    ) {
 
-        val email = _uiState.value.email.trim()
-        val motDePasse = _uiState.value.motDePasse
-
-        if (email.isBlank() || motDePasse.isBlank()) {
-            _uiState.value = _uiState.value.copy(
-                erreur = "Veuillez remplir tous les champs."
+        if (courriel.isBlank() || motDePasse.length < 6) {
+            _etat.value = _etat.value.copy(
+                erreur = "Entrez un courriel valide et un mot de passe d'au moins 6 caractères."
             )
             return
         }
 
         viewModelScope.launch {
 
-            _uiState.value = _uiState.value.copy(
-                chargement = true,
-                erreur = null
+            _etat.value = ConnexionEtat(chargement = true)
+
+            val resultat = auth.inscrire(
+                courriel,
+                motDePasse
             )
 
-            try {
+            resultat.onSuccess { utilisateur ->
 
-                val utilisateur = authRepository.creerCompte(
-                    email,
-                    motDePasse
-                )
-
-                if (utilisateur != null) {
-
-                    firestoreRepository.sauvegarderProfil(
-                        ProfilUtilisateur(
-                            uid = utilisateur.uid,
-                            email = utilisateur.email ?: ""
-                        )
+                repository.sauvegarderProfil(
+                    ProfilUtilisateur(
+                        uid = utilisateur.uid,
+                        courriel = utilisateur.email ?: ""
                     )
-                }
-
-                _uiState.value = _uiState.value.copy(
-                    chargement = false
                 )
 
-                onSucces()
+                _etat.value = ConnexionEtat(
+                    connecte = true
+                )
+            }
 
-            } catch (e: Exception) {
+            resultat.onFailure { erreur ->
 
-                _uiState.value = _uiState.value.copy(
-                    chargement = false,
-                    erreur = e.localizedMessage
-                        ?: "Impossible de créer le compte."
+                _etat.value = ConnexionEtat(
+                    erreur = erreur.message
+                        ?: "Erreur lors de l'inscription."
                 )
             }
         }
+    }
+
+    fun deconnecter() {
+        auth.deconnecter()
+
+        _etat.value = ConnexionEtat(
+            connecte = false
+        )
+    }
+
+    fun effacerErreur() {
+        _etat.value = _etat.value.copy(
+            erreur = null
+        )
     }
 }

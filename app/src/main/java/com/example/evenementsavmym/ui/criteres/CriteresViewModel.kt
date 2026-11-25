@@ -1,170 +1,112 @@
-
 package com.example.evenementsavmym.ui.criteres
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.evenementsavmym.donnees.firebase.AuthRepository
+import com.example.evenementsavmym.donnees.firebase.AuthFirebase
 import com.example.evenementsavmym.donnees.firebase.FirestoreRepository
 import com.example.evenementsavmym.modele.CriteresRecherche
-import com.example.evenementsavmym.modele.ProfilUtilisateur
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-data class CriteresUiState(
+data class CriteresEtat(
     val criteres: CriteresRecherche = CriteresRecherche(),
     val chargement: Boolean = false,
-    val message: String? = null,
-    val erreur: String? = null,
-    val profil: ProfilUtilisateur? = null
+    val sauvegardeReussie: Boolean = false,
+    val erreur: String? = null
 )
 
 class CriteresViewModel : ViewModel() {
 
-    private val authRepository = AuthRepository()
-    private val firestoreRepository = FirestoreRepository()
+    private val auth = AuthFirebase()
+    private val repository = FirestoreRepository()
 
-    private val _uiState = MutableStateFlow(CriteresUiState())
-    val uiState: StateFlow<CriteresUiState> = _uiState.asStateFlow()
+    private val _etat = MutableStateFlow(CriteresEtat())
 
-    init {
-        chargerCriteres()
-    }
-
-    fun modifierPays(value: String) {
-        modifierCriteres {
-            copy(codePays = value)
-        }
-    }
-
-    fun modifierCategorie(value: String) {
-        modifierCriteres {
-            copy(categorie = value.ifBlank { null })
-        }
-    }
-
-    fun modifierLangue(value: String) {
-        modifierCriteres {
-            copy(langue = value)
-        }
-    }
-
-    fun modifierVille(value: String) {
-        modifierCriteres {
-            copy(ville = value.ifBlank { null })
-        }
-    }
-
-    fun modifierDateDebut(value: String) {
-        modifierCriteres {
-            copy(dateDebutUtc = value.ifBlank { null })
-        }
-    }
-
-    fun modifierDateFin(value: String) {
-        modifierCriteres {
-            copy(dateFinUtc = value.ifBlank { null })
-        }
-    }
-
-    private fun modifierCriteres(
-        transformation: CriteresRecherche.() -> CriteresRecherche
-    ) {
-        _uiState.value = _uiState.value.copy(
-            criteres = _uiState.value.criteres.transformation(),
-            message = null,
-            erreur = null
-        )
-    }
+    val etat: StateFlow<CriteresEtat> = _etat
 
     fun chargerCriteres() {
 
-        val uid = authRepository.utilisateurActuel?.uid
-
-        if (uid == null) {
-            _uiState.value = _uiState.value.copy(
-                erreur = "Aucun utilisateur connecté."
-            )
-            return
-        }
+        val utilisateur = auth.utilisateurActuel() ?: return
 
         viewModelScope.launch {
 
-            _uiState.value = _uiState.value.copy(
+            _etat.value = _etat.value.copy(
                 chargement = true,
                 erreur = null
             )
 
-            try {
+            val resultat = repository.lireCriteres(
+                utilisateur.uid
+            )
 
-                val profil = firestoreRepository.obtenirProfil(uid)
+            resultat.onSuccess { criteres ->
 
-                val criteres = firestoreRepository.obtenirCriteres(uid)
-
-                _uiState.value = _uiState.value.copy(
-                    profil = profil,
+                _etat.value = CriteresEtat(
                     criteres = criteres,
                     chargement = false
                 )
+            }
 
-            } catch (e: Exception) {
+            resultat.onFailure { erreur ->
 
-                _uiState.value = _uiState.value.copy(
+                _etat.value = _etat.value.copy(
                     chargement = false,
-                    erreur = e.localizedMessage
+                    erreur = erreur.message
                         ?: "Impossible de charger les critères."
                 )
             }
         }
     }
 
+    fun modifierCriteres(
+        criteres: CriteresRecherche
+    ) {
+        _etat.value = _etat.value.copy(
+            criteres = criteres,
+            sauvegardeReussie = false,
+            erreur = null
+        )
+    }
+
     fun sauvegarderCriteres() {
 
-        val uid = authRepository.utilisateurActuel?.uid
+        val utilisateur = auth.utilisateurActuel()
 
-        if (uid == null) {
-            _uiState.value = _uiState.value.copy(
+        if (utilisateur == null) {
+            _etat.value = _etat.value.copy(
                 erreur = "Vous devez être connecté."
-            )
-            return
-        }
-
-        val criteres = _uiState.value.criteres
-
-        if (criteres.codePays.isBlank()) {
-            _uiState.value = _uiState.value.copy(
-                erreur = "Le pays est obligatoire."
             )
             return
         }
 
         viewModelScope.launch {
 
-            _uiState.value = _uiState.value.copy(
+            _etat.value = _etat.value.copy(
                 chargement = true,
-                message = null,
-                erreur = null
+                erreur = null,
+                sauvegardeReussie = false
             )
 
-            try {
+            val resultat = repository.sauvegarderCriteres(
+                utilisateur.uid,
+                _etat.value.criteres
+            )
 
-                firestoreRepository.sauvegarderCriteres(
-                    uid,
-                    criteres
-                )
+            resultat.onSuccess {
 
-                _uiState.value = _uiState.value.copy(
+                _etat.value = _etat.value.copy(
                     chargement = false,
-                    message = "Critères sauvegardés avec succès."
+                    sauvegardeReussie = true
                 )
+            }
 
-            } catch (e: Exception) {
+            resultat.onFailure { erreur ->
 
-                _uiState.value = _uiState.value.copy(
+                _etat.value = _etat.value.copy(
                     chargement = false,
-                    erreur = e.localizedMessage
-                        ?: "Erreur pendant la sauvegarde."
+                    erreur = erreur.message
+                        ?: "Erreur de sauvegarde."
                 )
             }
         }
