@@ -67,6 +67,10 @@ android {
     }
 }
 
+
+
+
+
 dependencies {
     // Retrofit & Serialization
     implementation("com.squareup.retrofit2:retrofit:3.0.0")
@@ -99,4 +103,25 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
+
+
+
+
+    // Navigation Compose
+    implementation("androidx.navigation:navigation-compose:2.9.6")
+
+    // ViewModel Compose
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.10.0")
+
+    // Firebase BOM
+    implementation(platform("com.google.firebase:firebase-bom:34.5.0"))
+
+    // Firebase Authentication
+    implementation("com.google.firebase:firebase-auth")
+
+    // Cloud Firestore
+    implementation("com.google.firebase:firebase-firestore")
+
+    // Coroutines Firebase
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.10.2")
 }
